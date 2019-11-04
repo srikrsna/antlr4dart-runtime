@@ -7,4 +7,4 @@ environment:
   sdk: '>=2.0.0 <3.0.0'
 dependencies:
   bit_array: ^2.0.0
-  collection: any
+  collection: ^1.14.12
