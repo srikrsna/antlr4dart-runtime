@@ -3,8 +3,8 @@ library antlr4dart;
 import 'dart:collection';
 import 'dart:math';
 import 'dart:async';
-import 'package:bignum/bignum.dart';
-import 'package:collection/equality.dart';
+import 'package:bit_array/bit_array.dart';
+import 'package:collection/collection.dart';
 
 part 'src/contexts.dart';
 part 'src/dfa.dart';

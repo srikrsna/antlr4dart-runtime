@@ -4,7 +4,6 @@ part of antlr4dart;
 /// with support for combining similar configurations using a
 /// graph-structured stack.
 class AtnConfigSet {
-
   // Indicates that the set of configurations is read-only. Do not allow any
   // code to manipulate the set; DFA states will point at the sets and they
   // must not change. This does not protect the other fields; in particular,
@@ -38,8 +37,7 @@ class AtnConfigSet {
     configLookup = new HashSet();
   }
 
-  AtnConfigSet.from(AtnConfigSet other)
-      : fullCtx = other.fullCtx {
+  AtnConfigSet.from(AtnConfigSet other) : fullCtx = other.fullCtx {
     configLookup = new HashSet();
     addAll(other.configs);
     uniqueAlt = other.uniqueAlt;
@@ -101,7 +99,7 @@ class AtnConfigSet {
     return alts;
   }
 
-  AtnConfig operator[](int i) => configs[i];
+  AtnConfig operator [](int i) => configs[i];
 
   void optimizeConfigs(AtnSimulator interpreter) {
     if (_readonly) throw new StateError("This set is readonly");
@@ -123,17 +121,18 @@ class AtnConfigSet {
   /// This method updates [dipsIntoOuterContext] and [hasSemanticContext]
   /// when necessary.
   bool add(AtnConfig config,
-           [DoubleKeyMap<PredictionContext,
-            PredictionContext, PredictionContext> mergeCache]) {
+      [DoubleKeyMap<PredictionContext, PredictionContext, PredictionContext>
+          mergeCache]) {
     if (_readonly) throw new StateError("This set is readonly");
-    if (config.semanticContext
-        != SemanticContext.NONE) hasSemanticContext = true;
+    if (config.semanticContext != SemanticContext.NONE)
+      hasSemanticContext = true;
     if (config.reachesIntoOuterContext > 0) dipsIntoOuterContext = true;
     AtnConfig existing = configLookup.lookup(config);
-    if (existing == null) { // we added this new one
+    if (existing == null) {
+      // we added this new one
       configLookup.add(config);
       _cachedHashCode = -1;
-      configs.add(config);  // track order here
+      configs.add(config); // track order here
       return true;
     }
     // a previous (s,i,pi,_), merge with it and save result
@@ -144,21 +143,21 @@ class AtnConfigSet {
     // since only way to create new graphs is "call rule" and here. We
     // cache at both places.
     existing
-        ..reachesIntoOuterContext = max(
-            existing.reachesIntoOuterContext, config.reachesIntoOuterContext)
-        ..context = merged; // replace context; no need to alt mapping
+      ..reachesIntoOuterContext =
+          max(existing.reachesIntoOuterContext, config.reachesIntoOuterContext)
+      ..context = merged; // replace context; no need to alt mapping
     return true;
   }
 
-  bool operator==(Object other) {
-    return other is AtnConfigSet
-      && configs != null
-      && _equalConfigs(other.configs)
-      && fullCtx == other.fullCtx
-      && uniqueAlt == other.uniqueAlt
-      && _conflictingAlts == other._conflictingAlts
-      && hasSemanticContext == other.hasSemanticContext
-      && dipsIntoOuterContext == other.dipsIntoOuterContext;
+  bool operator ==(Object other) {
+    return other is AtnConfigSet &&
+        configs != null &&
+        _equalConfigs(other.configs) &&
+        fullCtx == other.fullCtx &&
+        uniqueAlt == other.uniqueAlt &&
+        _conflictingAlts == other._conflictingAlts &&
+        hasSemanticContext == other.hasSemanticContext &&
+        dipsIntoOuterContext == other.dipsIntoOuterContext;
   }
 
   bool contains(Object o) {
@@ -204,7 +203,3 @@ class AtnConfigSet {
     return hashCode;
   }
 }
-
-
-
-

@@ -2,7 +2,6 @@ part of antlr4dart;
 
 /// Sometimes we need to map a key to a value but key is two pieces of data.
 class DoubleKeyMap<Key1, Key2, Value> {
-
   Map<Key1, Map<Key2, Value>> data;
 
   DoubleKeyMap() {
@@ -16,14 +15,14 @@ class DoubleKeyMap<Key1, Key2, Value> {
     return set;
   }
 
-  Set get keys => data.keys;
+  Set get keys => data.keys.toSet();
 
   Value put(Key1 key1, Key2 key2, Value value) {
     Map<Key2, Value> data = this.data[key1];
     Value prev = null;
     if (data == null) {
       data = new LinkedHashMap<Key2, Value>();
-      this.data[key1] =  data;
+      this.data[key1] = data;
     } else {
       prev = data[key2];
     }
@@ -49,7 +48,6 @@ class DoubleKeyMap<Key1, Key2, Value> {
   Set keySetForKey(Key1 key) {
     Map<Key2, Value> data = this.data[key];
     if (data == null) return null;
-    return data.keys;
+    return data.keys.toSet();
   }
 }
-

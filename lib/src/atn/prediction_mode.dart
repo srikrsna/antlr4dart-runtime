@@ -1,7 +1,6 @@
 part of antlr4dart;
 
 class PredictionMode {
-
   /// Do only local context prediction (SLL style) and using heuristic which
   /// almost always works but is much faster than precise answer.
   static const PredictionMode SLL = const PredictionMode._internal("SLL");
@@ -112,8 +111,8 @@ class PredictionMode {
   /// [AtnConfigSet.hasSemanticContext]), this algorithm makes a copy of
   /// the configurations to strip out all of the predicates so that a standard
   /// [AtnConfigSet] will merge everything ignoring predicates.
-  static bool hasSllConflictTerminatingPrediction(PredictionMode mode,
-                                                  AtnConfigSet configs) {
+  static bool hasSllConflictTerminatingPrediction(
+      PredictionMode mode, AtnConfigSet configs) {
     // Configs in rule stop states indicate reaching the end of the decision
     // rule (local context) or end of start rule (full context). If all
     // configs meet this condition, then none of the configurations is able
@@ -128,8 +127,8 @@ class PredictionMode {
       if (configs.hasSemanticContext) {
         // dup configs, tossing out semantic predicates
         AtnConfigSet dup = new AtnConfigSet();
-        for (AtnConfig c in configs) {
-          dup.add(new AtnConfig.from(c, semanticContext:SemanticContext.NONE));
+        for (AtnConfig c in configs.elements) {
+          dup.add(new AtnConfig.from(c, semanticContext: SemanticContext.NONE));
         }
         configs = dup;
       }
@@ -137,8 +136,8 @@ class PredictionMode {
     }
     // pure SLL or combined SLL+LL mode parsing
     Iterable<BitSet> altsets = getConflictingAltSubsets(configs);
-    return hasConflictingAltSet(altsets)
-        && !hasStateAssociatedWithOneAlt(configs);
+    return hasConflictingAltSet(altsets) &&
+        !hasStateAssociatedWithOneAlt(configs);
   }
 
   /// Checks if any configuration in [configs] is in a [RuleStopState].
@@ -150,7 +149,7 @@ class PredictionMode {
   /// Return `true` if any configuration in `configs` is in a [RuleStopState].
   /// Otherwise `false`.
   static bool hasConfigInRuleStopState(AtnConfigSet configs) {
-    for (AtnConfig c in configs) {
+    for (AtnConfig c in configs.elements) {
       if (c.state is RuleStopState) return true;
     }
     return false;
@@ -165,7 +164,7 @@ class PredictionMode {
   /// Return `true` if all configurations in `configs` are in a [RuleStopState].
   /// Otherwise `false`.
   static bool allConfigsInRuleStopStates(AtnConfigSet configs) {
-    for (AtnConfig config in configs) {
+    for (AtnConfig config in configs.elements) {
       if (config.state is! RuleStopState) return false;
     }
     return true;
@@ -378,8 +377,8 @@ class PredictionMode {
   ///
   ///     map[c] U= c.alt // map hash/equals uses s and x, not alt and not pred
   static Iterable<BitSet> getConflictingAltSubsets(AtnConfigSet configs) {
-    var configToAlts = new HashMap(equals:_equals, hashCode:_hashCode);
-    for (AtnConfig c in configs) {
+    var configToAlts = new HashMap(equals: _equals, hashCode: _hashCode);
+    for (AtnConfig c in configs.elements) {
       BitSet alts = configToAlts[c];
       if (alts == null) {
         alts = new BitSet();
@@ -396,7 +395,7 @@ class PredictionMode {
   ///     map[c.state] U= c.alt alt
   static Map<AtnState, BitSet> getStateToAltMap(AtnConfigSet configs) {
     Map<AtnState, BitSet> m = new HashMap<AtnState, BitSet>();
-    for (AtnConfig c in configs) {
+    for (AtnConfig c in configs.elements) {
       BitSet alts = m[c.state];
       if (alts == null) {
         alts = new BitSet();
@@ -420,7 +419,8 @@ class PredictionMode {
     for (BitSet alts in altsets) {
       int minAlt = alts.nextSetBit(0);
       viableAlts.set(minAlt, true);
-      if (viableAlts.cardinality > 1) { // more than 1 viable alt
+      if (viableAlts.cardinality > 1) {
+        // more than 1 viable alt
         return Atn.INVALID_ALT_NUMBER;
       }
     }
@@ -429,7 +429,7 @@ class PredictionMode {
 
   String toString() => name;
 
-  bool operator==(Object other) {
+  bool operator ==(Object other) {
     if (other is! PredictionMode) return false;
     return name == (other as PredictionMode).name;
   }
@@ -447,6 +447,5 @@ int _hashCode(AtnConfig o) {
 bool _equals(AtnConfig a, AtnConfig b) {
   if (a == b) return true;
   if (a == null || b == null) return false;
-  return a.state.stateNumber == b.state.stateNumber
-      && a.context == b.context;
+  return a.state.stateNumber == b.state.stateNumber && a.context == b.context;
 }

@@ -7,7 +7,6 @@ part of antlr4dart;
 /// the tree of semantic predicates encountered before reaching
 /// an ATN state.
 class AtnConfig {
-
   /// The ATN state associated with this configuration
   final AtnState state;
 
@@ -28,37 +27,35 @@ class AtnConfig {
 
   final SemanticContext semanticContext;
 
-  AtnConfig(AtnState state,
-            int alt,
-            PredictionContext context,
-            [SemanticContext semanticContext])
-      : this.semanticContext = (semanticContext != null)
-          ? semanticContext : SemanticContext.NONE,
+  AtnConfig(AtnState state, int alt, PredictionContext context,
+      [SemanticContext semanticContext])
+      : this.semanticContext =
+            (semanticContext != null) ? semanticContext : SemanticContext.NONE,
         this.state = state,
         this.alt = alt,
         this.context = context;
 
   AtnConfig.from(AtnConfig c,
-                 {AtnState state,
-                 PredictionContext context,
-                 SemanticContext semanticContext})
+      {AtnState state,
+      PredictionContext context,
+      SemanticContext semanticContext})
       : this.state = (state != null) ? state : c.state,
         this.context = (context != null) ? context : c.context,
-        this.semanticContext = (semanticContext != null)
-            ? semanticContext : c.semanticContext,
+        this.semanticContext =
+            (semanticContext != null) ? semanticContext : c.semanticContext,
         alt = c.alt,
         reachesIntoOuterContext = c.reachesIntoOuterContext;
 
   /// An ATN configuration is equal to [other] if both have the same state,
   /// they predict the same alternative, and syntactic/semantic contexts are
   /// the same.
-  bool operator==(Object other) {
-    return other is AtnConfig
-        && state.stateNumber == other.state.stateNumber
-        && alt == other.alt
-        && (context == other.context
-           || context != null && context == other.context)
-        && semanticContext == other.semanticContext;
+  bool operator ==(Object other) {
+    return other is AtnConfig &&
+        state.stateNumber == other.state.stateNumber &&
+        alt == other.alt &&
+        (context == other.context ||
+            context != null && context == other.context) &&
+        semanticContext == other.semanticContext;
   }
 
   int get hashCode {
@@ -87,30 +84,27 @@ class AtnConfig {
 }
 
 class LexerAtnConfig extends AtnConfig {
-
   /// Capture lexer actions we traverse.
   final LexerActionExecutor lexerActionExecutor;
 
   final bool hasPassedThroughNonGreedyDecision;
 
-  LexerAtnConfig(AtnState state,
-                 int alt,
-                 PredictionContext context,
-                 [this.lexerActionExecutor])
-    : hasPassedThroughNonGreedyDecision = false,
-      super(state, alt, context, SemanticContext.NONE);
+  LexerAtnConfig(AtnState state, int alt, PredictionContext context,
+      [this.lexerActionExecutor])
+      : hasPassedThroughNonGreedyDecision = false,
+        super(state, alt, context, SemanticContext.NONE);
 
-
-  LexerAtnConfig.from(LexerAtnConfig c,
-                      AtnState state,
-                      {LexerActionExecutor actionExecutor,
-                      PredictionContext context})
-    : lexerActionExecutor = (actionExecutor != null)
-        ? actionExecutor : c.lexerActionExecutor,
-      hasPassedThroughNonGreedyDecision = c.hasPassedThroughNonGreedyDecision
-        || state is DecisionState && state.nonGreedy,
-      super.from(c, state:state, context:(context != null) ? context: c.context,
-        semanticContext:c.semanticContext);
+  LexerAtnConfig.from(LexerAtnConfig c, AtnState state,
+      {LexerActionExecutor actionExecutor, PredictionContext context})
+      : lexerActionExecutor =
+            (actionExecutor != null) ? actionExecutor : c.lexerActionExecutor,
+        hasPassedThroughNonGreedyDecision =
+            c.hasPassedThroughNonGreedyDecision ||
+                state is DecisionState && state.nonGreedy,
+        super.from(c,
+            state: state,
+            context: (context != null) ? context : c.context,
+            semanticContext: c.semanticContext);
 
   int get hashCode {
     int hashCode = MurmurHash.initialize(7);
@@ -118,19 +112,18 @@ class LexerAtnConfig extends AtnConfig {
     hashCode = MurmurHash.update(hashCode, alt);
     hashCode = MurmurHash.update(hashCode, context.hashCode);
     hashCode = MurmurHash.update(hashCode, semanticContext.hashCode);
-    hashCode = MurmurHash.update(hashCode,
-        hasPassedThroughNonGreedyDecision ? 1 : 0);
+    hashCode =
+        MurmurHash.update(hashCode, hasPassedThroughNonGreedyDecision ? 1 : 0);
     hashCode = MurmurHash.update(hashCode, lexerActionExecutor.hashCode);
     hashCode = MurmurHash.finish(hashCode, 6);
     return hashCode;
   }
 
-  bool operator==(AtnConfig other) {
-    return other is  LexerAtnConfig
-        && hasPassedThroughNonGreedyDecision
-            == other.hasPassedThroughNonGreedyDecision
-        && lexerActionExecutor == other.lexerActionExecutor
-        && super == other;
+  bool operator ==(other) {
+    return other is LexerAtnConfig &&
+        hasPassedThroughNonGreedyDecision ==
+            other.hasPassedThroughNonGreedyDecision &&
+        lexerActionExecutor == other.lexerActionExecutor &&
+        super == other;
   }
 }
-

@@ -20,13 +20,12 @@ part of antlr4dart;
 /// methods in a `BitSet` will result in a [NullThrownError].
 ///
 class BitSet {
-
   // The bits in this BitSet.
-  BigInteger _word;
+  BitArray _word;
 
   /// Creates an empty bit set.
   BitSet() {
-    _word = BigInteger.ZERO;
+    _word = BitArray(32);
   }
 
   /// Returns a hash code value for this bit set. The hash code
@@ -44,9 +43,7 @@ class BitSet {
   ///
   /// Return  a hash code value for this bit set.
   int get hashCode {
-    var h = new BigInteger(1234);
-    h ^= _word;
-    return ((h >> 32) ^ h).intValue();
+    return _word.hashCode;
   }
 
   /// Returns the "logical size" of this [BitSet]: the index of the highest
@@ -54,13 +51,13 @@ class BitSet {
   /// no set bits.
   ///
   /// Return the logical size of this [BitSet].
-  int get length => _word.bitLength();
+  int get length => _word.length;
 
   /// Returns true if this [BitSet] contains no bits that are set to `true`.
-  bool get isEmpty => _word == BigInteger.ZERO;
+  bool get isEmpty => _word.isEmpty;
 
   /// Returns the number of bits set to `true` in this [BitSet].
-  int get cardinality => _word.bitCount();
+  int get cardinality => _word.cardinality;
 
   /// Sets the bit at the specified index to the specified [value].
   ///
@@ -70,7 +67,12 @@ class BitSet {
   void set(int bitIndex, [bool value = false]) {
     if (value) {
       if (bitIndex < 0) throw new RangeError("bitIndex < 0: $bitIndex");
-      _word = _word.setBit(bitIndex);
+      if (bitIndex < _word.length)
+        _word[bitIndex] = true;
+      else {
+        _word = BitArray.fromBitSet(_word, length: _word.length + 32);
+        _word[bitIndex] = true;
+      }
     } else {
       clear(bitIndex);
     }
@@ -83,7 +85,7 @@ class BitSet {
   /// A [RangeError] occurs when the specified index is negative.
   void clear(int bitIndex) {
     if (bitIndex < 0) throw new RangeError("bitIndex < 0: $bitIndex");
-    _word = _word.clearBit(bitIndex);
+    _word[bitIndex] = false;
   }
 
   /// Returns the value of the bit with the specified index. The value is
@@ -95,7 +97,7 @@ class BitSet {
   /// A [RangeError] occurs when the specified index is negative.
   bool get(int bitIndex) {
     if (bitIndex < 0) throw new RangeError("bitIndex < 0: $bitIndex");
-    return _word.testBit(bitIndex);
+    return _word[bitIndex];
   }
 
   /// Returns the index of the first bit that is set to `true` that occurs on
@@ -114,9 +116,9 @@ class BitSet {
   /// A [RangeError] occurs when the specified index is negative.
   int nextSetBit(int fromIndex) {
     if (fromIndex < 0) throw new RangeError("fromIndex < 0: $fromIndex");
-    var size = _word.bitLength();
-    for (int i = fromIndex; i < size;i++) {
-      if (_word.testBit(i)) return i;
+    var size = _word.length;
+    for (int i = fromIndex; i < size; i++) {
+      if (_word[i]) return i;
     }
     return -1;
   }
@@ -129,9 +131,9 @@ class BitSet {
   /// A [RangeError] occurs when the specified index is negative.
   int nextClearBit(int fromIndex) {
     if (fromIndex < 0) throw new RangeError("fromIndex < 0: $fromIndex");
-    var size = _word.bitLength();
-    for (int i = fromIndex; i < size;i++) {
-      if (!_word.testBit(i)) return i;
+    var size = _word.length;
+    for (int i = fromIndex; i < size; i++) {
+      if (!_word[i]) return i;
     }
     return -1;
   }
@@ -156,7 +158,7 @@ class BitSet {
   /// [other] is the the object to compare with.
   ///
   /// Return `true` if the objects are the same;`false` otherwise.
-  bool operator==(Object other) {
+  bool operator ==(Object other) {
     return other is BitSet ? _word == other._word : false;
   }
 
@@ -189,12 +191,10 @@ class BitSet {
     int i = nextSetBit(0);
     if (i != -1) {
       sb.write(i);
-      for (i = nextSetBit(i+1); i >= 0; i = nextSetBit(i+1)) {
+      for (i = nextSetBit(i + 1); i >= 0; i = nextSetBit(i + 1)) {
         int endOfRun = nextClearBit(i);
         do {
-          sb
-              ..write(", ")
-              ..write(i);
+          sb..write(", ")..write(i);
         } while (++i < endOfRun);
       }
     }

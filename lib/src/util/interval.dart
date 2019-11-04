@@ -2,10 +2,9 @@ part of antlr4dart;
 
 /// An immutable inclusive interval `a..b`.
 class Interval {
-
   static const int INTERVAL_POOL_MAX_VALUE = 1000;
 
-  static final Interval INVALID = new Interval(-1,-2);
+  static final Interval INVALID = new Interval(-1, -2);
 
   static List<Interval> cache = new List<Interval>(INTERVAL_POOL_MAX_VALUE + 1);
 
@@ -41,14 +40,17 @@ class Interval {
     return cache[a];
   }
 
-  bool operator==(Interval o) => _a == o._a && _b == o._b;
+  @override
+  bool operator ==(o) {
+    return o is Interval && _a == o._a && _b == o._b;
+  }
 
   /// Does this start completely before other? Disjoint.
   bool startsBeforeDisjoint(Interval other) => _a < other._a && _b < other._a;
 
   /// Does this start at or before other? Nondisjoint.
-  bool startsBeforeNonDisjoint(Interval other)
-    => _a <= other._a && _b >= other._a;
+  bool startsBeforeNonDisjoint(Interval other) =>
+      _a <= other._a && _b >= other._a;
 
   /// Does this.a start after other.b? May or may not be disjoint.
   bool startsAfter(Interval other) => _a > other._a;
@@ -57,12 +59,12 @@ class Interval {
   bool startsAfterDisjoint(Interval other) => _a > other._b;
 
   /// Does this start after other? NonDisjoint.
-  bool startsAfterNonDisjoint(Interval other)
-    => _a > other._a && _a <= other._b;
+  bool startsAfterNonDisjoint(Interval other) =>
+      _a > other._a && _a <= other._b;
 
   /// Are both ranges disjoint? I.e., no overlap?
-  bool disjoint(Interval other)
-    => startsBeforeDisjoint(other) || startsAfterDisjoint(other);
+  bool disjoint(Interval other) =>
+      startsBeforeDisjoint(other) || startsAfterDisjoint(other);
 
   /// Are two intervals adjacent such as 0..41 and 42..42?
   bool adjacent(Interval other) => _a == other._b + 1 || _b == other._a - 1;
@@ -70,12 +72,12 @@ class Interval {
   bool properlyContains(Interval other) => other._a >= _a && other._b <= _b;
 
   /// Return the interval computed from combining this and [other].
-  Interval union(Interval other)
-    => Interval.of(min(_a, other._a), max(_b, other._b));
+  Interval union(Interval other) =>
+      Interval.of(min(_a, other._a), max(_b, other._b));
 
   /// Return the interval in common between this and [other].
-  Interval intersection(Interval other)
-    => Interval.of(max(_a, other._a), min(_b, other._b));
+  Interval intersection(Interval other) =>
+      Interval.of(max(_a, other._a), min(_b, other._b));
 
   /// Return the interval with elements from this not in [other].
   ///

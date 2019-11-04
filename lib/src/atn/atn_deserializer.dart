@@ -1,15 +1,14 @@
 part of antlr4dart;
 
 class AtnDeserializationOptions {
-
   static final defaultOptions = new AtnDeserializationOptions();
 
   final bool isReadOnly;
   bool _verifyAtn = true;
   bool _generateRuleBypassTransitions = false;
 
-  AtnDeserializationOptions({AtnDeserializationOptions options,
-                             this.isReadOnly:true}) {
+  AtnDeserializationOptions(
+      {AtnDeserializationOptions options, this.isReadOnly: true}) {
     if (options != null) {
       _verifyAtn = options.isVerifyAtn;
       _generateRuleBypassTransitions = options.isGenerateRuleBypassTransitions;
@@ -38,9 +37,9 @@ class AtnDeserializationOptions {
 }
 
 class AtnDeserializer {
-
   static const _BASE_SERIALIZED_UUID = "33761B2D-78BB-4A43-8B0B-4F5BEE8AACF3";
-  static const _ADDED_PRECEDENCE_TRANSITIONS = "1DA0C57D-6C06-438A-9B27-10BCB3CE0F61";
+  static const _ADDED_PRECEDENCE_TRANSITIONS =
+      "1DA0C57D-6C06-438A-9B27-10BCB3CE0F61";
   static const _ADDED_LEXER_ACTIONS = "AADB8D7E-AEEF-4415-AD2B-8204D6CF042E";
 
   static const int SERIALIZED_VERSION = 3;
@@ -56,8 +55,9 @@ class AtnDeserializer {
   final AtnDeserializationOptions _deserializationOptions;
 
   AtnDeserializer([AtnDeserializationOptions deserializationOptions])
-      : _deserializationOptions =  (deserializationOptions != null)
-        ? deserializationOptions : AtnDeserializationOptions.defaultOptions;
+      : _deserializationOptions = (deserializationOptions != null)
+            ? deserializationOptions
+            : AtnDeserializationOptions.defaultOptions;
 
   Atn deserialize(String data) {
     RuneIterator iterator = data.runes.iterator;
@@ -74,7 +74,8 @@ class AtnDeserializer {
       throw new UnsupportedError("Could not deserialize ATN "
           "with UUID $uuid (expected $SERIALIZED_UUID or a legacy UUID).");
     }
-    bool supPrecPreds = _isFeatureSupported(_ADDED_PRECEDENCE_TRANSITIONS, uuid);
+    bool supPrecPreds =
+        _isFeatureSupported(_ADDED_PRECEDENCE_TRANSITIONS, uuid);
     bool supportsLexerActions = _isFeatureSupported(_ADDED_LEXER_ACTIONS, uuid);
     AtnType grammarType = AtnType.values[codes[p++]];
     int maxTokenType = codes[p++];
@@ -93,14 +94,15 @@ class AtnDeserializer {
       }
       var ruleIndex = codes[p++];
       AtnState state = _stateFactory(stype, ruleIndex);
-      if (stype == AtnState.LOOP_END) { // special case
+      if (stype == AtnState.LOOP_END) {
+        // special case
         int loopBackStateNumber = codes[p++];
-        loopBackStateNumbers.add(
-            new Pair<LoopEndState, int>(state, loopBackStateNumber));
+        loopBackStateNumbers
+            .add(new Pair<LoopEndState, int>(state, loopBackStateNumber));
       } else if (state is BlockStartState) {
         int endStateNumber = codes[p++];
-        endStateNumbers.add(
-            new Pair<BlockStartState, int>(state, endStateNumber));
+        endStateNumbers
+            .add(new Pair<BlockStartState, int>(state, endStateNumber));
       }
       atn.addState(state);
     }
@@ -146,8 +148,8 @@ class AtnDeserializer {
     for (AtnState state in atn.states) {
       if (state is! RuleStopState) continue;
       atn
-          ..ruleToStopState[state.ruleIndex] = state
-          ..ruleToStartState[state.ruleIndex].stopState = state;
+        ..ruleToStopState[state.ruleIndex] = state
+        ..ruleToStartState[state.ruleIndex].stopState = state;
     }
     // MODES
     int nmodes = codes[p++];
@@ -220,7 +222,7 @@ class AtnDeserializer {
     for (int i = 1; i <= ndecisions; i++) {
       DecisionState decState = atn.states[codes[p++]];
       atn.decisionToState.add(decState);
-      decState.decision = i-1;
+      decState.decision = i - 1;
     }
 
     // LEXER ACTIONS
@@ -228,10 +230,10 @@ class AtnDeserializer {
       if (supportsLexerActions) {
         atn.lexerActions = new List<LexerAction>(codes[p++]);
         for (int i = 0; i < atn.lexerActions.length; i++) {
-            LexerActionType actionType = LexerActionType.values[codes[p++]];
-            atn.lexerActions[i] =
-                _lexerActionFactory(actionType, codes[p++], codes[p++]);
-          }
+          LexerActionType actionType = LexerActionType.values[codes[p++]];
+          atn.lexerActions[i] =
+              _lexerActionFactory(actionType, codes[p++], codes[p++]);
+        }
       } else {
         // for compatibility with older serialized ATNs, convert the old
         // serialized action index for action transitions to the new
@@ -244,8 +246,10 @@ class AtnDeserializer {
             int ruleIndex = (transition as ActionTransition).ruleIndex;
             int actionIndex = (transition as ActionTransition).actionIndex;
             var lexerAction = new LexerCustomAction(ruleIndex, actionIndex);
-            state.setTransition(i, new ActionTransition(
-                transition.target, ruleIndex, legacyLexerActions.length, false));
+            state.setTransition(
+                i,
+                new ActionTransition(transition.target, ruleIndex,
+                    legacyLexerActions.length, false));
             legacyLexerActions.add(lexerAction);
           }
         }
@@ -256,8 +260,8 @@ class AtnDeserializer {
     _markPrecedenceDecisions(atn);
     if (_deserializationOptions.isVerifyAtn) _verifyAtn(atn);
 
-    if (_deserializationOptions.isGenerateRuleBypassTransitions
-        && atn.grammarType == AtnType.PARSER) {
+    if (_deserializationOptions.isGenerateRuleBypassTransitions &&
+        atn.grammarType == AtnType.PARSER) {
       atn.ruleToTokenType = new List<int>(atn.ruleToStartState.length);
       for (int i = 0; i < atn.ruleToStartState.length; i++) {
         atn.ruleToTokenType[i] = atn.maxTokenType + i + 1;
@@ -280,11 +284,11 @@ class AtnDeserializer {
           for (AtnState state in atn.states) {
             if (state.ruleIndex != i) continue;
             if (state is! StarLoopEntryState) continue;
-            AtnState maybeLoopEndState = state
-                .getTransition(state.numberOfTransitions - 1).target;
+            AtnState maybeLoopEndState =
+                state.getTransition(state.numberOfTransitions - 1).target;
             if (maybeLoopEndState is! LoopEndState) continue;
-            if (maybeLoopEndState.epsilonOnlyTransitions
-                && maybeLoopEndState.getTransition(0).target is RuleStopState) {
+            if (maybeLoopEndState.epsilonOnlyTransitions &&
+                maybeLoopEndState.getTransition(0).target is RuleStopState) {
               endState = state;
               break;
             }
@@ -293,8 +297,8 @@ class AtnDeserializer {
             throw new UnsupportedError("Couldn't "
                 "identify final state of the precedence rule prefix section.");
           }
-          excludeTransition = (endState as
-              StarLoopEntryState).loopBackState.getTransition(0);
+          excludeTransition =
+              (endState as StarLoopEntryState).loopBackState.getTransition(0);
         } else {
           endState = atn.ruleToStopState[i];
         }
@@ -309,12 +313,13 @@ class AtnDeserializer {
         // all transitions leaving the rule start state need to leave
         // blockStart instead
         while (atn.ruleToStartState[i].numberOfTransitions > 0) {
-          Transition transition = atn.ruleToStartState[i]
-            .removeTransition(atn.ruleToStartState[i].numberOfTransitions - 1);
+          Transition transition = atn.ruleToStartState[i].removeTransition(
+              atn.ruleToStartState[i].numberOfTransitions - 1);
           bypassStart.addTransition(transition);
         }
         // link the new states
-        atn.ruleToStartState[i].addTransition(new EpsilonTransition(bypassStart));
+        atn.ruleToStartState[i]
+            .addTransition(new EpsilonTransition(bypassStart));
         bypassStop.addTransition(new EpsilonTransition(endState));
 
         AtnState matchState = new BasicState();
@@ -328,29 +333,32 @@ class AtnDeserializer {
     return atn;
   }
 
-  static Transition _edgeFactory(
-      Atn atn, int type, int src, int trg, int arg1,
+  static Transition _edgeFactory(Atn atn, int type, int src, int trg, int arg1,
       int arg2, int arg3, List<IntervalSet> sets) {
     AtnState target = atn.states[trg];
     switch (type) {
-      case Transition.EPSILON : return new EpsilonTransition(target);
-      case Transition.RANGE :
+      case Transition.EPSILON:
+        return new EpsilonTransition(target);
+      case Transition.RANGE:
         if (arg3 != 0) return new RangeTransition(target, Token.EOF, arg2);
         return new RangeTransition(target, arg1, arg2);
-      case Transition.RULE :
+      case Transition.RULE:
         return new RuleTransition(atn.states[arg1], arg2, arg3, target);
-      case Transition.PREDICATE :
+      case Transition.PREDICATE:
         return new PredicateTransition(target, arg1, arg2, arg3 != 0);
       case Transition.PRECEDENCE:
         return new PrecedencePredicateTransition(target, arg1);
-      case Transition.ATOM :
+      case Transition.ATOM:
         if (arg3 != 0) return new AtomTransition(target, Token.EOF);
         return new AtomTransition(target, arg1);
-      case Transition.ACTION :
+      case Transition.ACTION:
         return new ActionTransition(target, arg1, arg2, arg3 != 0);
-      case Transition.SET : return new SetTransition(target, sets[arg1]);
-      case Transition.NOT_SET : return new NotSetTransition(target, sets[arg1]);
-      case Transition.WILDCARD : return new WildcardTransition(target);
+      case Transition.SET:
+        return new SetTransition(target, sets[arg1]);
+      case Transition.NOT_SET:
+        return new NotSetTransition(target, sets[arg1]);
+      case Transition.WILDCARD:
+        return new WildcardTransition(target);
     }
     throw new ArgumentError("The specified transition type is not valid.");
   }
@@ -358,21 +366,46 @@ class AtnDeserializer {
   static AtnState _stateFactory(int type, int ruleIndex) {
     AtnState s;
     switch (type) {
-      case AtnState.INVALID_TYPE: return null;
-      case AtnState.BASIC : s = new BasicState(); break;
-      case AtnState.RULE_START : s = new RuleStartState(); break;
-      case AtnState.BLOCK_START : s = new BasicBlockStartState(); break;
-      case AtnState.PLUS_BLOCK_START : s = new PlusBlockStartState(); break;
-      case AtnState.STAR_BLOCK_START : s = new StarBlockStartState(); break;
-      case AtnState.TOKEN_START : s = new TokensStartState(); break;
-      case AtnState.RULE_STOP : s = new RuleStopState(); break;
-      case AtnState.BLOCK_END : s = new BlockEndState(); break;
-      case AtnState.STAR_LOOP_BACK : s = new StarLoopbackState(); break;
-      case AtnState.STAR_LOOP_ENTRY : s = new StarLoopEntryState(); break;
-      case AtnState.PLUS_LOOP_BACK : s = new PlusLoopbackState(); break;
-      case AtnState.LOOP_END : s = new LoopEndState(); break;
-      default : throw new ArgumentError(
-          "The specified state type $type is not valid.");
+      case AtnState.INVALID_TYPE:
+        return null;
+      case AtnState.BASIC:
+        s = new BasicState();
+        break;
+      case AtnState.RULE_START:
+        s = new RuleStartState();
+        break;
+      case AtnState.BLOCK_START:
+        s = new BasicBlockStartState();
+        break;
+      case AtnState.PLUS_BLOCK_START:
+        s = new PlusBlockStartState();
+        break;
+      case AtnState.STAR_BLOCK_START:
+        s = new StarBlockStartState();
+        break;
+      case AtnState.TOKEN_START:
+        s = new TokensStartState();
+        break;
+      case AtnState.RULE_STOP:
+        s = new RuleStopState();
+        break;
+      case AtnState.BLOCK_END:
+        s = new BlockEndState();
+        break;
+      case AtnState.STAR_LOOP_BACK:
+        s = new StarLoopbackState();
+        break;
+      case AtnState.STAR_LOOP_ENTRY:
+        s = new StarLoopEntryState();
+        break;
+      case AtnState.PLUS_LOOP_BACK:
+        s = new PlusLoopbackState();
+        break;
+      case AtnState.LOOP_END:
+        s = new LoopEndState();
+        break;
+      default:
+        throw new ArgumentError("The specified state type $type is not valid.");
     }
     s.ruleIndex = ruleIndex;
     return s;
@@ -385,13 +418,13 @@ class AtnDeserializer {
   }
 
   static String _toUuid(List<int> data) {
-    BigInteger leastSigBits = _toInt(data);
-    BigInteger mostSigBits = _toInt(data, 4);
+    final leastSigBits = _toInt(data);
+    final mostSigBits = _toInt(data, 4);
     String uuid = "${_digits(mostSigBits >> 32, 8)}-"
-                  "${_digits(mostSigBits >> 16, 4)}-"
-                  "${_digits(mostSigBits, 4)}-"
-                  "${_digits(leastSigBits >> 48, 4)}-"
-                  "${_digits(leastSigBits, 12)}";
+        "${_digits(mostSigBits >> 16, 4)}-"
+        "${_digits(mostSigBits, 4)}-"
+        "${_digits(leastSigBits >> 48, 4)}-"
+        "${_digits(leastSigBits, 12)}";
     return uuid.toUpperCase();
   }
 
@@ -406,11 +439,11 @@ class AtnDeserializer {
       // decision for the closure block that determines whether a
       // precedence rule should continue or complete.
       if (atn.ruleToStartState[state.ruleIndex].isPrecedenceRule) {
-        AtnState maybeLoopEndState = state
-           .getTransition(state.numberOfTransitions - 1).target;
+        AtnState maybeLoopEndState =
+            state.getTransition(state.numberOfTransitions - 1).target;
         if (maybeLoopEndState is LoopEndState) {
-          if (maybeLoopEndState.epsilonOnlyTransitions
-             && maybeLoopEndState.getTransition(0).target is RuleStopState) {
+          if (maybeLoopEndState.epsilonOnlyTransitions &&
+              maybeLoopEndState.getTransition(0).target is RuleStopState) {
             (state as StarLoopEntryState).precedenceRuleDecision = true;
           }
         }
@@ -419,27 +452,35 @@ class AtnDeserializer {
   }
 
   LexerAction _lexerActionFactory(LexerActionType type, int data1, int data2) {
-   switch (type) {
-     case LexerActionType.CHANNEL:return new LexerChannelAction(data1);
-     case LexerActionType.CUSTOM: return new LexerCustomAction(data1, data2);
-     case LexerActionType.MODE: return new LexerModeAction(data1);
-     case LexerActionType.MORE: return LexerMoreAction.INSTANCE;
-     case LexerActionType.POP_MODE: return LexerPopModeAction.INSTANCE;
-     case LexerActionType.PUSH_MODE: return new LexerPushModeAction(data1);
-     case LexerActionType.SKIP: return LexerSkipAction.INSTANCE;
-     case LexerActionType.TYPE: return new LexerTypeAction(data1);
-     default:
-       throw new ArgumentError(
-           "The specified lexer action type $type is not valid.");
-     }
-   }
+    switch (type) {
+      case LexerActionType.CHANNEL:
+        return new LexerChannelAction(data1);
+      case LexerActionType.CUSTOM:
+        return new LexerCustomAction(data1, data2);
+      case LexerActionType.MODE:
+        return new LexerModeAction(data1);
+      case LexerActionType.MORE:
+        return LexerMoreAction.INSTANCE;
+      case LexerActionType.POP_MODE:
+        return LexerPopModeAction.INSTANCE;
+      case LexerActionType.PUSH_MODE:
+        return new LexerPushModeAction(data1);
+      case LexerActionType.SKIP:
+        return LexerSkipAction.INSTANCE;
+      case LexerActionType.TYPE:
+        return new LexerTypeAction(data1);
+      default:
+        throw new ArgumentError(
+            "The specified lexer action type $type is not valid.");
+    }
+  }
 
   static void _verifyAtn(Atn atn) {
     // verify assumptions
     for (AtnState state in atn.states) {
       if (state == null) continue;
       _checkCondition(
-         state.onlyHasEpsilonTransitions || (state.numberOfTransitions <= 1));
+          state.onlyHasEpsilonTransitions || (state.numberOfTransitions <= 1));
       if (state is PlusBlockStartState)
         _checkCondition(state.loopBackState != null);
       if (state is StarLoopEntryState) {
@@ -466,21 +507,23 @@ class AtnDeserializer {
       if (state is DecisionState) {
         _checkCondition(state.numberOfTransitions <= 1 || state.decision >= 0);
       } else {
-        _checkCondition(state.numberOfTransitions <= 1 || state is RuleStopState);
+        _checkCondition(
+            state.numberOfTransitions <= 1 || state is RuleStopState);
       }
     }
   }
 
-  static BigInteger _toInt(List<int> data, [int offset = 0]) {
-    var mask = new BigInteger()..fromString('00000000FFFFFFFF', 16);
-    var lowOrder = new BigInteger(data[offset] | (data[offset + 1] << 16)) & mask;
-    var highOrder = new BigInteger(data[offset + 2] | data[offset + 3] << 16) << 32;
+  static BigInt _toInt(List<int> data, [int offset = 0]) {
+    var mask = BigInt.parse('00000000FFFFFFFF', radix: 16);
+    var lowOrder = BigInt.from(data[offset] | (data[offset + 1] << 16)) & mask;
+    var highOrder =
+        BigInt.from(data[offset + 2] | data[offset + 3] << 16) << 32;
     return lowOrder | highOrder;
   }
 
-  static String _digits(BigInteger paramLong, int paramInt) {
-    var left = new BigInteger(1 << paramInt * 4);
-    String hex = ((left | paramLong & left - BigInteger.ONE)).toString(16);
+  static String _digits(BigInt paramLong, int paramInt) {
+    var left = BigInt.from(1 << paramInt * 4);
+    String hex = ((left | paramLong & left - BigInt.one)).toRadixString(16);
     return hex.substring(hex.length - paramInt);
   }
 

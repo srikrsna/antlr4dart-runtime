@@ -1,9 +1,9 @@
 part of antlr4dart;
 
 abstract class AtnSimulator {
-
   /// Must distinguish between missing edge and edge we know leads nowhere
-  static final ERROR = new DfaState(pow(2, 53) - 1)..configs = new AtnConfigSet();
+  static final ERROR = new DfaState(pow(2, 53) - 1)
+    ..configs = new AtnConfigSet();
 
   final Atn atn;
 
@@ -22,8 +22,8 @@ abstract class AtnSimulator {
   PredictionContext getCachedContext(PredictionContext context) {
     if (sharedContextCache == null) return context;
     var visited = new HashMap<PredictionContext, PredictionContext>();
-    return PredictionContext
-        .getCachedContext(context, sharedContextCache, visited);
+    return PredictionContext.getCachedContext(
+        context, sharedContextCache, visited);
   }
 
   /// Clear the DFA cache used by the current instance. Since the DFA cache may
@@ -38,7 +38,8 @@ abstract class AtnSimulator {
         "This ATN simulator does not support clearing the DFA.");
   }
 
-  static Atn deserialize(String data) => new AtnDeserializer().deserialize(data);
+  static Atn deserialize(String data) =>
+      new AtnDeserializer().deserialize(data);
 }
 
 /// The embodiment of the adaptive LL(*), ALL(*), parsing strategy.
@@ -166,7 +167,6 @@ abstract class AtnSimulator {
 /// PredictionContext objects are shared among the DFA states. This makes
 /// a big size difference.
 class ParserAtnSimulator extends AtnSimulator {
-
   final Parser parser;
   final List<Dfa> decisionToDfa;
 
@@ -186,17 +186,14 @@ class ParserAtnSimulator extends AtnSimulator {
   /// SLL, LL, or LL + exact ambiguity detection?
   PredictionMode predictionMode = PredictionMode.LL;
 
-  ParserAtnSimulator(this.parser,
-                     Atn atn,
-                     this.decisionToDfa,
-                     PredictionContextCache sharedContextCache)
+  ParserAtnSimulator(this.parser, Atn atn, this.decisionToDfa,
+      PredictionContextCache sharedContextCache)
       : super(atn, sharedContextCache);
 
   void reset() {}
 
-  int adaptivePredict(TokenSource tokenSource,
-                      int decision,
-                      ParserRuleContext outerContext) {
+  int adaptivePredict(
+      TokenSource tokenSource, int decision, ParserRuleContext outerContext) {
     _input = tokenSource;
     _startIndex = tokenSource.index;
     _outerContext = outerContext;
@@ -220,13 +217,14 @@ class ParserAtnSimulator extends AtnSimulator {
         // closure block that determines whether a precedence rule
         // should continue or complete.
         if (!dfa.isPrecedenceDfa && dfa.atnStartState is StarLoopEntryState) {
-          if ((dfa.atnStartState as StarLoopEntryState).precedenceRuleDecision) {
+          if ((dfa.atnStartState as StarLoopEntryState)
+              .precedenceRuleDecision) {
             dfa.isPrecedenceDfa = true;
           }
         }
         bool fullCtx = false;
-        var s0Closure = _computeStartState(
-            dfa.atnStartState, RuleContext.EMPTY, fullCtx);
+        var s0Closure =
+            _computeStartState(dfa.atnStartState, RuleContext.EMPTY, fullCtx);
         if (dfa.isPrecedenceDfa) {
           // If this is a precedence DFA, we use applyPrecedenceFilter
           // to convert the computed start state to a precedence start
@@ -254,13 +252,14 @@ class ParserAtnSimulator extends AtnSimulator {
 
   String getRuleName(int index) {
     return (parser != null && index >= 0)
-        ? parser.ruleNames[index] : "<rule $index>";
+        ? parser.ruleNames[index]
+        : "<rule $index>";
   }
 
   String getTokenName(int token) {
     if (token == Token.EOF) return "EOF";
     List<String> tokensNames = parser.tokenNames;
-    if (parser != null &&  tokensNames != null) {
+    if (parser != null && tokensNames != null) {
       if (token >= tokensNames.length) {
         throw new RangeError("$token ttype out of range: $tokensNames");
       } else {
@@ -285,7 +284,7 @@ class ParserAtnSimulator extends AtnSimulator {
   // "dead" code for a bit.
   void _dumpDeadEndConfigs(NoViableAltException nvae) {
     print("dead end configs: ");
-    for (AtnConfig c in nvae.deadEndConfigs) {
+    for (AtnConfig c in nvae.deadEndConfigs.elements) {
       String trans = "no edges";
       if (c.state.numberOfTransitions > 0) {
         Transition t = c.state.getTransition(0);
@@ -293,7 +292,7 @@ class ParserAtnSimulator extends AtnSimulator {
           trans = "Atom ${getTokenName(t.especialLabel)}";
         } else if (t is SetTransition) {
           bool not = t is NotSetTransition;
-          trans = "${(not?"~":"")}Set ${t.set}";
+          trans = "${(not ? "~" : "")}Set ${t.set}";
         }
       }
       print("${c.toString(parser, true)}:$trans");
@@ -330,7 +329,7 @@ class ParserAtnSimulator extends AtnSimulator {
   AtnConfigSet _applyPrecedenceFilter(AtnConfigSet configs) {
     Set<int> statesFromAlt1 = new HashSet<int>();
     AtnConfigSet configSet = new AtnConfigSet(configs.fullCtx);
-    for (AtnConfig config in configs) {
+    for (AtnConfig config in configs.elements) {
       // handle alt 1 first
       if (config.alt != 1) continue;
       var updatedContext =
@@ -338,13 +337,14 @@ class ParserAtnSimulator extends AtnSimulator {
       if (updatedContext == null) continue;
       statesFromAlt1.add(config.state.stateNumber);
       if (updatedContext != config.semanticContext) {
-        configSet.add(new AtnConfig.from(
-            config, semanticContext:updatedContext), _mergeCache);
+        configSet.add(
+            new AtnConfig.from(config, semanticContext: updatedContext),
+            _mergeCache);
       } else {
         configSet.add(config, _mergeCache);
       }
     }
-    for (AtnConfig config in configs) {
+    for (AtnConfig config in configs.elements) {
       if (config.alt == 1) continue;
       if (statesFromAlt1.contains(config.state.stateNumber)) {
         // eliminated
@@ -384,11 +384,8 @@ class ParserAtnSimulator extends AtnSimulator {
   //  * single alt + preds
   //  * conflict
   //  * conflict + preds
-  int _execAtn(Dfa dfa,
-               DfaState s0,
-               TokenSource tokenSource,
-               int startIndex,
-               ParserRuleContext outerContext) {
+  int _execAtn(Dfa dfa, DfaState s0, TokenSource tokenSource, int startIndex,
+      ParserRuleContext outerContext) {
     DfaState previousD = s0;
     int token = tokenSource.lookAhead(1);
     while (true) {
@@ -416,8 +413,8 @@ class ParserAtnSimulator extends AtnSimulator {
         if (state.predicates != null) {
           int conflictIndex = tokenSource.index;
           if (conflictIndex != startIndex) tokenSource.seek(startIndex);
-          conflictingAlts = _evalSemanticContext(
-              state.predicates, outerContext, true);
+          conflictingAlts =
+              _evalSemanticContext(state.predicates, outerContext, true);
           if (conflictingAlts.cardinality == 1) {
             return conflictingAlts.nextSetBit(0);
           }
@@ -428,8 +425,8 @@ class ParserAtnSimulator extends AtnSimulator {
           }
         }
         bool fullCtx = true;
-        var s0Closure = _computeStartState(
-            dfa.atnStartState, outerContext, fullCtx);
+        var s0Closure =
+            _computeStartState(dfa.atnStartState, outerContext, fullCtx);
         _reportAttemptingFullContext(
             dfa, conflictingAlts, state.configs, startIndex, tokenSource.index);
         int alt = _execAtnWithFullContext(
@@ -442,11 +439,14 @@ class ParserAtnSimulator extends AtnSimulator {
         }
         int stopIndex = tokenSource.index;
         tokenSource.seek(startIndex);
-        BitSet alts = _evalSemanticContext(state.predicates, outerContext, true);
+        BitSet alts =
+            _evalSemanticContext(state.predicates, outerContext, true);
         switch (alts.cardinality) {
-          case 0: throw _noViableAlt(
+          case 0:
+            throw _noViableAlt(
                 tokenSource, outerContext, state.configs, startIndex);
-          case 1: return alts.nextSetBit(0);
+          case 1:
+            return alts.nextSetBit(0);
           default:
             // report ambiguity after predicate evaluation to make sure the
             // correct set of ambig alts is reported.
@@ -501,22 +501,22 @@ class ParserAtnSimulator extends AtnSimulator {
     if (predictedAlt != Atn.INVALID_ALT_NUMBER) {
       // NO CONFLICT, UNIQUELY PREDICTED ALT
       state
-          ..isAcceptState = true
-          ..configs.uniqueAlt = predictedAlt
-          ..prediction = predictedAlt;
-    } else if (PredictionMode
-        .hasSllConflictTerminatingPrediction(predictionMode, reach)) {
+        ..isAcceptState = true
+        ..configs.uniqueAlt = predictedAlt
+        ..prediction = predictedAlt;
+    } else if (PredictionMode.hasSllConflictTerminatingPrediction(
+        predictionMode, reach)) {
       // MORE THAN ONE VIABLE ALTERNATIVE
       state
-          ..configs._conflictingAlts = _getConflictingAlts(reach)
-          ..requiresFullContext = true
-          // in SLL-only mode, we will stop at this state and return the
-          // minimum alt
-          ..isAcceptState = true
-          ..prediction = state.configs._conflictingAlts.nextSetBit(0);
+        ..configs._conflictingAlts = _getConflictingAlts(reach)
+        ..requiresFullContext = true
+        // in SLL-only mode, we will stop at this state and return the
+        // minimum alt
+        ..isAcceptState = true
+        ..prediction = state.configs._conflictingAlts.nextSetBit(0);
     }
 
-    if ( state.isAcceptState && state.configs.hasSemanticContext) {
+    if (state.isAcceptState && state.configs.hasSemanticContext) {
       _predicateDfaState(state, atn.getDecisionState(dfa.decision));
       if (state.predicates != null) {
         state.prediction = Atn.INVALID_ALT_NUMBER;
@@ -534,12 +534,12 @@ class ParserAtnSimulator extends AtnSimulator {
     // Update DFA so reach becomes accept state with (predicate,alt)
     // pairs if preds found for conflicting alts
     var altsToCollect = _getConflictingAltsOrUniqueAlt(dfaState.configs);
-    var altToPred = _getPredsForAmbigAlts(
-        altsToCollect, dfaState.configs, nalts);
+    var altToPred =
+        _getPredsForAmbigAlts(altsToCollect, dfaState.configs, nalts);
     if (altToPred != null) {
       dfaState
-          ..predicates = _getPredicatePredictions(altsToCollect, altToPred)
-          ..prediction = Atn.INVALID_ALT_NUMBER;
+        ..predicates = _getPredicatePredictions(altsToCollect, altToPred)
+        ..prediction = Atn.INVALID_ALT_NUMBER;
     } else {
       // There are preds in configs but they might go away
       // when OR'd together like {p}? || NONE == NONE. If neither
@@ -549,11 +549,13 @@ class ParserAtnSimulator extends AtnSimulator {
   }
 
   // comes back with reach.uniqueAlt set to a valid alt
-  int _execAtnWithFullContext(Dfa dfa,
-                              DfaState D, // how far we got before failing over
-                              AtnConfigSet s0,
-                              TokenSource input, int startIndex,
-                              ParserRuleContext outerContext) {
+  int _execAtnWithFullContext(
+      Dfa dfa,
+      DfaState D, // how far we got before failing over
+      AtnConfigSet s0,
+      TokenSource input,
+      int startIndex,
+      ParserRuleContext outerContext) {
     bool fullCtx = true;
     bool foundExactAmbig = false;
     AtnConfigSet reach = null;
@@ -561,7 +563,8 @@ class ParserAtnSimulator extends AtnSimulator {
     input.seek(startIndex);
     int token = input.lookAhead(1);
     int predictedAlt;
-    while (true) { // while more work
+    while (true) {
+      // while more work
       reach = _computeReachSet(previous, token, fullCtx);
       if (reach == null) {
         // if any configs in previous dipped into outer context, that
@@ -592,8 +595,8 @@ class ParserAtnSimulator extends AtnSimulator {
       } else {
         // In exact ambiguity mode, we never try to terminate early.
         // Just keeps scarfing until we know what the conflict is
-        if (PredictionMode.allSubsetsConflict(altSubSets)
-            && PredictionMode.allSubsetsEqual(altSubSets)) {
+        if (PredictionMode.allSubsetsConflict(altSubSets) &&
+            PredictionMode.allSubsetsEqual(altSubSets)) {
           foundExactAmbig = true;
           predictedAlt = PredictionMode.getSingleViableAlt(altSubSets);
           break;
@@ -647,8 +650,8 @@ class ParserAtnSimulator extends AtnSimulator {
     return predictedAlt;
   }
 
-  int _getSynValidOrSemInvalidAlt(AtnConfigSet configs,
-                                  ParserRuleContext outerContext) {
+  int _getSynValidOrSemInvalidAlt(
+      AtnConfigSet configs, ParserRuleContext outerContext) {
     var sets = _splitAccordingToSemValidity(configs, outerContext);
     AtnConfigSet semValidConfigs = sets.a;
     AtnConfigSet semInvalidConfigs = sets.b;
@@ -672,12 +675,13 @@ class ParserAtnSimulator extends AtnSimulator {
   //
   // Assumption: the input stream has been restored to the starting point
   // prediction, which is where predicates need to evaluate.
-  Pair _splitAccordingToSemValidity(AtnConfigSet configs,
-                                    ParserRuleContext outerContext) {
+  Pair _splitAccordingToSemValidity(
+      AtnConfigSet configs, ParserRuleContext outerContext) {
     AtnConfigSet succeeded = new AtnConfigSet(configs.fullCtx);
-    AtnConfigSet failed = new AtnConfigSet(configs.fullCtx);;
-    for (AtnConfig c in configs) {
-      if (c.semanticContext != SemanticContext.NONE ) {
+    AtnConfigSet failed = new AtnConfigSet(configs.fullCtx);
+    ;
+    for (AtnConfig c in configs.elements) {
+      if (c.semanticContext != SemanticContext.NONE) {
         bool predicate = c.semanticContext.eval(parser, outerContext);
         if (predicate) {
           succeeded.add(c);
@@ -707,7 +711,7 @@ class ParserAtnSimulator extends AtnSimulator {
     List<AtnConfig> skippedStopStates = null;
     // First figure out where we can reach on input t
 
-    for (AtnConfig c in closure) {
+    for (AtnConfig c in closure.elements) {
       if (c.state is RuleStopState) {
         assert(c.context.isEmpty);
         if (fullCtx || t == Token.EOF) {
@@ -720,11 +724,12 @@ class ParserAtnSimulator extends AtnSimulator {
       }
 
       int n = c.state.numberOfTransitions;
-      for (int ti = 0; ti < n; ti++) {  // for each transition
+      for (int ti = 0; ti < n; ti++) {
+        // for each transition
         Transition trans = c.state.getTransition(ti);
         AtnState target = _getReachableTarget(trans, t);
         if (target != null) {
-          intermediate.add(new AtnConfig.from(c, state:target), _mergeCache);
+          intermediate.add(new AtnConfig.from(c, state: target), _mergeCache);
         }
       }
     }
@@ -758,7 +763,7 @@ class ParserAtnSimulator extends AtnSimulator {
       reach = new AtnConfigSet(fullCtx);
       Set<AtnConfig> closureBusy = new HashSet<AtnConfig>();
       bool treatEofAsEpsilon = t == Token.EOF;
-      for (AtnConfig c in intermediate) {
+      for (AtnConfig c in intermediate.elements) {
         _closure(c, reach, closureBusy, false, fullCtx, treatEofAsEpsilon);
       }
     }
@@ -817,11 +822,11 @@ class ParserAtnSimulator extends AtnSimulator {
   // Return configs if all configurations in configs are in a
   // rule stop state, otherwise return a new configuration set containing only
   // the configurations from configs which are in a rule stop state.
-  AtnConfigSet _removeAllConfigsNotInRuleStopState(AtnConfigSet configs,
-                                                   bool lookToEndOfRule) {
+  AtnConfigSet _removeAllConfigsNotInRuleStopState(
+      AtnConfigSet configs, bool lookToEndOfRule) {
     if (PredictionMode.allConfigsInRuleStopStates(configs)) return configs;
     AtnConfigSet result = new AtnConfigSet(configs.fullCtx);
-    for (AtnConfig config in configs) {
+    for (AtnConfig config in configs.elements) {
       if (config.state is RuleStopState) {
         result.add(config, _mergeCache);
         continue;
@@ -830,22 +835,20 @@ class ParserAtnSimulator extends AtnSimulator {
         IntervalSet nextTokens = atn.nextTokensInSameRule(config.state);
         if (nextTokens.contains(Token.EPSILON)) {
           AtnState end = atn.ruleToStopState[config.state.ruleIndex];
-          result.add(new AtnConfig.from(config, state:end), _mergeCache);
+          result.add(new AtnConfig.from(config, state: end), _mergeCache);
         }
       }
     }
     return result;
   }
 
-  AtnConfigSet _computeStartState(AtnState p,
-                                  RuleContext ctx,
-                                  bool fullCtx) {
+  AtnConfigSet _computeStartState(AtnState p, RuleContext ctx, bool fullCtx) {
     // always at least the implicit call to start rule
     var initialContext = new PredictionContext.fromRuleContext(atn, ctx);
     AtnConfigSet configs = new AtnConfigSet(fullCtx);
     for (int i = 0; i < p.numberOfTransitions; i++) {
       AtnState target = p.getTransition(i).target;
-      AtnConfig c = new AtnConfig(target, i+1, initialContext);
+      AtnConfig c = new AtnConfig(target, i + 1, initialContext);
       Set<AtnConfig> closureBusy = new HashSet<AtnConfig>();
       _closure(c, configs, closureBusy, true, fullCtx, false);
     }
@@ -856,9 +859,8 @@ class ParserAtnSimulator extends AtnSimulator {
     return trans.matches(ttype, 0, atn.maxTokenType) ? trans.target : null;
   }
 
-  List<SemanticContext> _getPredsForAmbigAlts(BitSet ambigAlts,
-                                              AtnConfigSet configs,
-                                              int nalts) {
+  List<SemanticContext> _getPredsForAmbigAlts(
+      BitSet ambigAlts, AtnConfigSet configs, int nalts) {
     // REACH=[1|1|[]|0:0, 1|2|[]|0:1]
     // altToPred starts as an array of all null contexts. The entry at index i
     // corresponds to alternative i. altToPred[i] may have one of three values:
@@ -872,10 +874,10 @@ class ParserAtnSimulator extends AtnSimulator {
     //
     // From this, it is clear that NONE || anything == NONE.
     List<SemanticContext> altToPred = new List<SemanticContext>(nalts + 1);
-    for (AtnConfig c in configs) {
+    for (AtnConfig c in configs.elements) {
       if (ambigAlts.get(c.alt)) {
-        altToPred[c.alt] = SemanticContext.or(
-            altToPred[c.alt], c.semanticContext);
+        altToPred[c.alt] =
+            SemanticContext.or(altToPred[c.alt], c.semanticContext);
       }
     }
     int nPredAlts = 0;
@@ -891,8 +893,8 @@ class ParserAtnSimulator extends AtnSimulator {
     return altToPred;
   }
 
-  List _getPredicatePredictions(BitSet ambigAlts,
-                                List<SemanticContext> altToPred) {
+  List _getPredicatePredictions(
+      BitSet ambigAlts, List<SemanticContext> altToPred) {
     List<_PredPrediction> pairs = new List<_PredPrediction>();
     bool containsPredicate = false;
     for (int i = 1; i < altToPred.length; i++) {
@@ -902,7 +904,7 @@ class ParserAtnSimulator extends AtnSimulator {
       if (ambigAlts != null && ambigAlts.get(i)) {
         pairs.add(new _PredPrediction(pred, i));
       }
-      if (pred!=SemanticContext.NONE) containsPredicate = true;
+      if (pred != SemanticContext.NONE) containsPredicate = true;
     }
     if (!containsPredicate) pairs = null;
     return pairs;
@@ -910,9 +912,9 @@ class ParserAtnSimulator extends AtnSimulator {
 
   int _getAltThatFinishedDecisionEntryRule(AtnConfigSet configs) {
     IntervalSet alts = new IntervalSet();
-    for (AtnConfig c in configs) {
-      if (c.reachesIntoOuterContext>0
-          || (c.state is RuleStopState && c.context.hasEmptyPath)) {
+    for (AtnConfig c in configs.elements) {
+      if (c.reachesIntoOuterContext > 0 ||
+          (c.state is RuleStopState && c.context.hasEmptyPath)) {
         alts.addSingle(c.alt);
       }
     }
@@ -926,8 +928,7 @@ class ParserAtnSimulator extends AtnSimulator {
   // then we stop at the first predicate that evaluates to true. This
   // includes pairs with null predicates.
   BitSet _evalSemanticContext(List<_PredPrediction> predPredictions,
-                              ParserRuleContext outerContext,
-                              bool complete) {
+      ParserRuleContext outerContext, bool complete) {
     BitSet predictions = new BitSet();
     for (_PredPrediction pair in predPredictions) {
       if (pair.pred == SemanticContext.NONE) {
@@ -936,7 +937,7 @@ class ParserAtnSimulator extends AtnSimulator {
         continue;
       }
       bool predicateEvaluationResult = pair.pred.eval(parser, outerContext);
-      if ( predicateEvaluationResult ) {
+      if (predicateEvaluationResult) {
         predictions.set(pair.alt, true);
         if (!complete) break;
       }
@@ -944,40 +945,44 @@ class ParserAtnSimulator extends AtnSimulator {
     return predictions;
   }
 
-  void _closure(AtnConfig config,
-                AtnConfigSet configs,
-                Set<AtnConfig> closureBusy,
-                bool collectPredicates,
-                bool fullCtx,
-                bool treatEofAsEpsilon) {
+  void _closure(
+      AtnConfig config,
+      AtnConfigSet configs,
+      Set<AtnConfig> closureBusy,
+      bool collectPredicates,
+      bool fullCtx,
+      bool treatEofAsEpsilon) {
     final int initialDepth = 0;
-    _closureCheckingStopState(config, configs, closureBusy,
-        collectPredicates, fullCtx, initialDepth, treatEofAsEpsilon);
+    _closureCheckingStopState(config, configs, closureBusy, collectPredicates,
+        fullCtx, initialDepth, treatEofAsEpsilon);
     assert(!fullCtx || !configs.dipsIntoOuterContext);
   }
 
-  void _closureCheckingStopState(AtnConfig config,
-                                 AtnConfigSet configs,
-                                 Set<AtnConfig> closureBusy,
-                                 bool collectPredicates,
-                                 bool fullCtx,
-                                 int depth,
-                                 bool treatEofAsEpsilon) {
+  void _closureCheckingStopState(
+      AtnConfig config,
+      AtnConfigSet configs,
+      Set<AtnConfig> closureBusy,
+      bool collectPredicates,
+      bool fullCtx,
+      int depth,
+      bool treatEofAsEpsilon) {
     if (config.state is RuleStopState) {
       // We hit rule end. If we have context info, use it
       // run thru all possible stack tops in ctx
       if (!config.context.isEmpty) {
         for (int i = 0; i < config.context.length; i++) {
-          if (config.context.returnStateFor(i)
-              == PredictionContext.EMPTY_RETURN_STATE) {
+          if (config.context.returnStateFor(i) ==
+              PredictionContext.EMPTY_RETURN_STATE) {
             if (fullCtx) {
-              configs.add(new AtnConfig.from(config, state:config.state,
-                  context:PredictionContext.EMPTY), _mergeCache);
+              configs.add(
+                  new AtnConfig.from(config,
+                      state: config.state, context: PredictionContext.EMPTY),
+                  _mergeCache);
               continue;
             } else {
               // we have no context info, just chase follow links (if greedy)
-              _closure_(config, configs, closureBusy,
-                  collectPredicates, fullCtx, depth, treatEofAsEpsilon);
+              _closure_(config, configs, closureBusy, collectPredicates,
+                  fullCtx, depth, treatEofAsEpsilon);
             }
             continue;
           }
@@ -989,9 +994,9 @@ class ParserAtnSimulator extends AtnSimulator {
           // gotten that context AFTER having falling off a rule.
           // Make sure we track that we are now out of context.
           c.reachesIntoOuterContext = config.reachesIntoOuterContext;
-          assert (depth > -pow(2, 53));
-          _closureCheckingStopState(c, configs, closureBusy,
-              collectPredicates, fullCtx, depth - 1, treatEofAsEpsilon);
+          assert(depth > -pow(2, 53));
+          _closureCheckingStopState(c, configs, closureBusy, collectPredicates,
+              fullCtx, depth - 1, treatEofAsEpsilon);
         }
         return;
       } else if (fullCtx) {
@@ -1002,26 +1007,27 @@ class ParserAtnSimulator extends AtnSimulator {
         // else if we have no context info, just chase follow links (if greedy)
       }
     }
-    _closure_(config, configs, closureBusy,
-        collectPredicates, fullCtx, depth, treatEofAsEpsilon);
+    _closure_(config, configs, closureBusy, collectPredicates, fullCtx, depth,
+        treatEofAsEpsilon);
   }
 
   // Do the actual work of walking epsilon edges.
-  void _closure_(AtnConfig config,
-                 AtnConfigSet configs,
-                 Set<AtnConfig> closureBusy,
-                 bool collectPredicates,
-                 bool fullCtx,
-                 int depth,
-                 bool treatEofAsEpsilon) {
+  void _closure_(
+      AtnConfig config,
+      AtnConfigSet configs,
+      Set<AtnConfig> closureBusy,
+      bool collectPredicates,
+      bool fullCtx,
+      int depth,
+      bool treatEofAsEpsilon) {
     AtnState p = config.state;
     // optimization
     if (!p.onlyHasEpsilonTransitions) configs.add(config, _mergeCache);
     for (int i = 0; i < p.numberOfTransitions; i++) {
       Transition t = p.getTransition(i);
       bool continueCollecting = (t is! ActionTransition) && collectPredicates;
-      AtnConfig c = _getEpsilonTarget(config, t,
-          continueCollecting, depth == 0, fullCtx, treatEofAsEpsilon);
+      AtnConfig c = _getEpsilonTarget(config, t, continueCollecting, depth == 0,
+          fullCtx, treatEofAsEpsilon);
       if (c != null) {
         if (!t.isEpsilon && !closureBusy.add(c)) {
           // avoid infinite recursion for EOF* and EOF+
@@ -1049,18 +1055,19 @@ class ParserAtnSimulator extends AtnSimulator {
           // entry context we can't return
           if (newDepth >= 0) newDepth++;
         }
-        _closureCheckingStopState(c, configs, closureBusy,
-            continueCollecting, fullCtx, newDepth, treatEofAsEpsilon);
+        _closureCheckingStopState(c, configs, closureBusy, continueCollecting,
+            fullCtx, newDepth, treatEofAsEpsilon);
       }
     }
   }
 
-  AtnConfig _getEpsilonTarget(AtnConfig config,
-                              Transition t,
-                              bool collectPredicates,
-                              bool inContext,
-                              bool fullCtx,
-                              bool treatEofAsEpsilon) {
+  AtnConfig _getEpsilonTarget(
+      AtnConfig config,
+      Transition t,
+      bool collectPredicates,
+      bool inContext,
+      bool fullCtx,
+      bool treatEofAsEpsilon) {
     switch (t.serializationType) {
       case Transition.RULE:
         return _ruleTransition(config, t);
@@ -1073,7 +1080,7 @@ class ParserAtnSimulator extends AtnSimulator {
       case Transition.ACTION:
         return _actionTransition(config, t);
       case Transition.EPSILON:
-        return new AtnConfig.from(config, state:t.target);
+        return new AtnConfig.from(config, state: t.target);
       case Transition.ATOM:
       case Transition.RANGE:
       case Transition.SET:
@@ -1081,19 +1088,21 @@ class ParserAtnSimulator extends AtnSimulator {
         // transition is traversed
         if (treatEofAsEpsilon) {
           if (t.matches(Token.EOF, 0, 1)) {
-            return new AtnConfig.from(config, state:t.target);
+            return new AtnConfig.from(config, state: t.target);
           }
         }
         return null;
-      default: return null;
+      default:
+        return null;
     }
   }
 
-  AtnConfig _precedenceTransition(AtnConfig config,
-                                  PrecedencePredicateTransition pt,
-                                  bool collectPredicates,
-                                  bool inContext,
-                                  bool fullCtx) {
+  AtnConfig _precedenceTransition(
+      AtnConfig config,
+      PrecedencePredicateTransition pt,
+      bool collectPredicates,
+      bool inContext,
+      bool fullCtx) {
     AtnConfig c = null;
     if (collectPredicates && inContext) {
       if (fullCtx) {
@@ -1105,31 +1114,29 @@ class ParserAtnSimulator extends AtnSimulator {
         _input.seek(_startIndex);
         bool predSucceeds = pt.predicate.eval(parser, _outerContext);
         _input.seek(currentPosition);
-        if ( predSucceeds ) {
-          c = new AtnConfig.from(config, state:pt.target); // no pred context
+        if (predSucceeds) {
+          c = new AtnConfig.from(config, state: pt.target); // no pred context
         }
       } else {
         var newCtx = SemanticContext.and(config.semanticContext, pt.predicate);
-        c = new AtnConfig.from(config, state:pt.target, semanticContext:newCtx);
+        c = new AtnConfig.from(config,
+            state: pt.target, semanticContext: newCtx);
       }
     } else {
-      c = new AtnConfig.from(config, state:pt.target);
+      c = new AtnConfig.from(config, state: pt.target);
     }
     return c;
   }
 
   AtnConfig _actionTransition(AtnConfig config, ActionTransition transition) {
-    return new AtnConfig.from(config, state:transition.target);
+    return new AtnConfig.from(config, state: transition.target);
   }
 
-  AtnConfig _predTransition(AtnConfig config,
-                            PredicateTransition pt,
-                            bool collectPredicates,
-                            bool inContext,
-                            bool fullCtx) {
+  AtnConfig _predTransition(AtnConfig config, PredicateTransition pt,
+      bool collectPredicates, bool inContext, bool fullCtx) {
     AtnConfig c = null;
     if (collectPredicates &&
-       (!pt.isCtxDependent || (pt.isCtxDependent && inContext))) {
+        (!pt.isCtxDependent || (pt.isCtxDependent && inContext))) {
       if (fullCtx) {
         // In full context mode, we can evaluate predicates on-the-fly
         // during closure, which dramatically reduces the size of
@@ -1140,23 +1147,24 @@ class ParserAtnSimulator extends AtnSimulator {
         bool predSucceeds = pt.predicate.eval(parser, _outerContext);
         _input.seek(currentPosition);
         if (predSucceeds) {
-          c = new AtnConfig.from(config, state:pt.target); // no pred context
+          c = new AtnConfig.from(config, state: pt.target); // no pred context
         }
       } else {
         var newCtx = SemanticContext.and(config.semanticContext, pt.predicate);
-        c = new AtnConfig.from(config, state:pt.target, semanticContext:newCtx);
+        c = new AtnConfig.from(config,
+            state: pt.target, semanticContext: newCtx);
       }
     } else {
-      c = new AtnConfig.from(config, state:pt.target);
+      c = new AtnConfig.from(config, state: pt.target);
     }
     return c;
   }
 
   AtnConfig _ruleTransition(AtnConfig config, RuleTransition t) {
     AtnState returnState = t.followState;
-    var newContext = new SingletonPredictionContext
-        .empty(config.context, returnState.stateNumber);
-    return new AtnConfig.from(config, state:t.target, context:newContext);
+    var newContext = new SingletonPredictionContext.empty(
+        config.context, returnState.stateNumber);
+    return new AtnConfig.from(config, state: t.target, context: newContext);
   }
 
   BitSet _getConflictingAlts(AtnConfigSet configs) {
@@ -1209,22 +1217,19 @@ class ParserAtnSimulator extends AtnSimulator {
   }
 
   NoViableAltException _noViableAlt(TokenSource input,
-                                    ParserRuleContext outerContext,
-                                    AtnConfigSet configs,
-                                    int startIndex) {
-    return new NoViableAltException(
-        parser,
+      ParserRuleContext outerContext, AtnConfigSet configs, int startIndex) {
+    return new NoViableAltException(parser,
         inputSource: input,
         startToken: input.get(startIndex),
-        offendingToken:input.lookToken(1),
-        context:outerContext,
-        deadEndConfigs:configs);
+        offendingToken: input.lookToken(1),
+        context: outerContext,
+        deadEndConfigs: configs);
   }
 
   static int _getUniqueAlt(AtnConfigSet configs) {
     int alt = Atn.INVALID_ALT_NUMBER;
-    for (AtnConfig c in configs) {
-      if ( alt == Atn.INVALID_ALT_NUMBER ) {
+    for (AtnConfig c in configs.elements) {
+      if (alt == Atn.INVALID_ALT_NUMBER) {
         alt = c.alt; // found first alt
       } else if (c.alt != alt) {
         return Atn.INVALID_ALT_NUMBER;
@@ -1247,10 +1252,7 @@ class ParserAtnSimulator extends AtnSimulator {
   // from is the source state for the edge
   // token is the input symbol
   // to is the target state for the edge
-  DfaState _addDfaEdge(Dfa dfa,
-                       DfaState from,
-                       int token,
-                       DfaState to) {
+  DfaState _addDfaEdge(Dfa dfa, DfaState from, int token, DfaState to) {
     if (to == null) return null;
     to = _addDfaState_(dfa, to); // used existing if possible not incoming
     if (from == null || token < -1 || token > atn.maxTokenType) {
@@ -1259,7 +1261,7 @@ class ParserAtnSimulator extends AtnSimulator {
     if (from.edges == null) {
       from.edges = new List<DfaState>(atn.maxTokenType + 1 + 1);
     }
-    from.edges[token+1] = to; // connect
+    from.edges[token + 1] = to; // connect
     return to;
   }
 
@@ -1289,34 +1291,23 @@ class ParserAtnSimulator extends AtnSimulator {
     return state;
   }
 
-  void _reportAttemptingFullContext(Dfa dfa,
-                                    BitSet conflictingAlts,
-                                    AtnConfigSet configs,
-                                    int startIndex,
-                                    int stopIndex) {
+  void _reportAttemptingFullContext(Dfa dfa, BitSet conflictingAlts,
+      AtnConfigSet configs, int startIndex, int stopIndex) {
     if (parser != null)
       parser._fullContextController.add(new AttemptingFullContextEvent(
           parser, dfa, startIndex, stopIndex, conflictingAlts, configs));
   }
 
-  void _reportContextSensitivity(Dfa dfa,
-                                 int prediction,
-                                 AtnConfigSet configs,
-                                 int startIndex,
-                                 int stopIndex) {
+  void _reportContextSensitivity(Dfa dfa, int prediction, AtnConfigSet configs,
+      int startIndex, int stopIndex) {
     if (parser != null)
       parser._sensitivityController.add(new ContextSensitivityEvent(
           parser, dfa, startIndex, stopIndex, prediction, configs));
   }
 
   // If context sensitive parsing, we know it's ambiguity not conflict.
-  void _reportAmbiguity(Dfa dfa,
-                        DfaState D,
-                        int startIndex,
-                        int stopIndex,
-                        bool exact,
-                        BitSet ambigAlts,
-                        AtnConfigSet configs) {
+  void _reportAmbiguity(Dfa dfa, DfaState D, int startIndex, int stopIndex,
+      bool exact, BitSet ambigAlts, AtnConfigSet configs) {
     if (parser != null)
       parser._ambiguityController.add(new AmbiguityEvent(
           parser, dfa, startIndex, stopIndex, exact, ambigAlts, configs));
@@ -1325,7 +1316,6 @@ class ParserAtnSimulator extends AtnSimulator {
 
 /// See [ParserInterpreter].
 class LexerAtnSimulator extends AtnSimulator {
-
   static const int MIN_DFA_EDGE = 0;
   static const int MAX_DFA_EDGE = 127;
 
@@ -1352,10 +1342,10 @@ class LexerAtnSimulator extends AtnSimulator {
 
   static int match_calls = 0;
 
-  LexerAtnSimulator(Atn atn,
-                    this.decisionToDfa,
-                    PredictionContextCache sharedContextCache,
-                    [this._recog]) : super(atn, sharedContextCache);
+  LexerAtnSimulator(
+      Atn atn, this.decisionToDfa, PredictionContextCache sharedContextCache,
+      [this._recog])
+      : super(atn, sharedContextCache);
 
   void copyState(LexerAtnSimulator simulator) {
     charPositionInLine = simulator.charPositionInLine;
@@ -1434,7 +1424,8 @@ class LexerAtnSimulator extends AtnSimulator {
   int _execAtn(StringSource input, DfaState ds0) {
     int token = input.lookAhead(1);
     DfaState state = ds0; // s is current/from DFA state
-    while (true) { // while more work
+    while (true) {
+      // while more work
       // As we move src->trg, src->trg, we keep track of the previous trg to
       // avoid looking up the DFA state again, which is expensive.
       // If the previous target was already part of the DFA, we might
@@ -1480,9 +1471,8 @@ class LexerAtnSimulator extends AtnSimulator {
   // t, or null if the target state for this edge is not
   // already cached
   DfaState _getExistingTargetState(DfaState state, int token) {
-    if (state.edges == null
-        || token < MIN_DFA_EDGE
-        || token > MAX_DFA_EDGE) return null;
+    if (state.edges == null || token < MIN_DFA_EDGE || token > MAX_DFA_EDGE)
+      return null;
     DfaState target = state.edges[token - MIN_DFA_EDGE];
     return target;
   }
@@ -1502,9 +1492,10 @@ class LexerAtnSimulator extends AtnSimulator {
     // if we don't find an existing DFA state
     // Fill reach starting from closure, following t transitions
     _getReachableConfigSet(input, s.configs, reach, t);
-    if (reach.isEmpty) { // we got nowhere on t from s
+    if (reach.isEmpty) {
+      // we got nowhere on t from s
       if (!reach.hasSemanticContext) {
-       // we got nowhere on t, don't throw out this knowledge; it'd
+        // we got nowhere on t, don't throw out this knowledge; it'd
         // cause a failover from DFA later.
         __addDfaEdge(s, t, AtnSimulator.ERROR);
       }
@@ -1515,14 +1506,12 @@ class LexerAtnSimulator extends AtnSimulator {
     return _addDfaEdge(s, t, reach);
   }
 
-  int _failOrAccept(_SimState prevAccept,
-                    StringSource input,
-                    AtnConfigSet reach,
-                    int token) {
+  int _failOrAccept(
+      _SimState prevAccept, StringSource input, AtnConfigSet reach, int token) {
     if (prevAccept._dfaState != null) {
       var lexerActionExecutor = prevAccept._dfaState.lexerActionExecutor;
-      _accept(input, lexerActionExecutor, _startIndex,
-          prevAccept._index, prevAccept._line, prevAccept._charPos);
+      _accept(input, lexerActionExecutor, _startIndex, prevAccept._index,
+          prevAccept._line, prevAccept._charPos);
       return prevAccept._dfaState.prediction;
     } else {
       // if no accept and EOF is first char, return EOF
@@ -1534,17 +1523,15 @@ class LexerAtnSimulator extends AtnSimulator {
   // Given a starting configuration set, figure out all ATN configurations
   // we can reach upon input token. Parameter reach is a return
   // parameter.
-  void _getReachableConfigSet(StringSource input,
-                              AtnConfigSet closure,
-                              AtnConfigSet reach,
-                              int token) {
+  void _getReachableConfigSet(
+      StringSource input, AtnConfigSet closure, AtnConfigSet reach, int token) {
     // this is used to skip processing for configs which have a lower priority
     // than a config that already reached an accept state for the same rule
     int skipAlt = Atn.INVALID_ALT_NUMBER;
-    for (AtnConfig c in closure) {
+    for (AtnConfig c in closure.elements) {
       bool currentAltReachedAcceptState = c.alt == skipAlt;
-      if (currentAltReachedAcceptState
-          && (c as LexerAtnConfig).hasPassedThroughNonGreedyDecision) {
+      if (currentAltReachedAcceptState &&
+          (c as LexerAtnConfig).hasPassedThroughNonGreedyDecision) {
         continue;
       }
       int n = c.state.numberOfTransitions;
@@ -1557,9 +1544,13 @@ class LexerAtnSimulator extends AtnSimulator {
             executor = executor.fixOffsetBeforeMatch(input.index - _startIndex);
           }
           bool treatEofAsEpsilon = token == Token.EOF;
-          if (_closure(input,
-              new LexerAtnConfig.from(c, target, actionExecutor:executor),
-              reach, currentAltReachedAcceptState, true, treatEofAsEpsilon)) {
+          if (_closure(
+              input,
+              new LexerAtnConfig.from(c, target, actionExecutor: executor),
+              reach,
+              currentAltReachedAcceptState,
+              true,
+              treatEofAsEpsilon)) {
             // any remaining configs for this alt have a lower priority than
             // the one that just reached an accept state.
             skipAlt = c.alt;
@@ -1570,12 +1561,8 @@ class LexerAtnSimulator extends AtnSimulator {
     }
   }
 
-  void _accept(StringSource input,
-               LexerActionExecutor lexerActionExecutor,
-               int startIndex,
-               int index,
-               int line,
-               int charPos) {
+  void _accept(StringSource input, LexerActionExecutor lexerActionExecutor,
+      int startIndex, int index, int line, int charPos) {
     // seek to after last char in token
     input.seek(index);
     this.line = line;
@@ -1596,7 +1583,7 @@ class LexerAtnSimulator extends AtnSimulator {
   AtnConfigSet _computeStartState(StringSource input, AtnState state) {
     PredictionContext initialContext = PredictionContext.EMPTY;
     AtnConfigSet configs = new AtnConfigSet();
-    for (int i = 0; i< state.numberOfTransitions; i++) {
+    for (int i = 0; i < state.numberOfTransitions; i++) {
       AtnState target = state.getTransition(i).target;
       LexerAtnConfig c = new LexerAtnConfig(target, i + 1, initialContext);
       _closure(input, c, configs, false, false, false);
@@ -1611,31 +1598,32 @@ class LexerAtnSimulator extends AtnSimulator {
   // this rule would have a lower priority.
   //
   // Return true if an accept state is reached, otherwise false.
-  bool _closure(StringSource input,
-                LexerAtnConfig config,
-                AtnConfigSet configs,
-                bool currentAltReachedAcceptState,
-                bool speculative,
-                bool treatEofAsEpsilon) {
+  bool _closure(
+      StringSource input,
+      LexerAtnConfig config,
+      AtnConfigSet configs,
+      bool currentAltReachedAcceptState,
+      bool speculative,
+      bool treatEofAsEpsilon) {
     if (config.state is RuleStopState) {
       if (config.context == null || config.context.hasEmptyPath) {
         if (config.context == null || config.context.isEmpty) {
           configs.add(config);
           return true;
         } else {
-          configs.add(new LexerAtnConfig.from(
-              config, config.state, context:PredictionContext.EMPTY));
+          configs.add(new LexerAtnConfig.from(config, config.state,
+              context: PredictionContext.EMPTY));
           currentAltReachedAcceptState = true;
         }
       }
       if (config.context != null && !config.context.isEmpty) {
         for (int i = 0; i < config.context.length; i++) {
-          if (config.context.returnStateFor(i)
-              != PredictionContext.EMPTY_RETURN_STATE) {
+          if (config.context.returnStateFor(i) !=
+              PredictionContext.EMPTY_RETURN_STATE) {
             PredictionContext newContext = config.context.parentFor(i);
             AtnState returnState = atn.states[config.context.returnStateFor(i)];
-            LexerAtnConfig c = new LexerAtnConfig.from(
-                config, returnState, context:newContext);
+            LexerAtnConfig c = new LexerAtnConfig.from(config, returnState,
+                context: newContext);
             currentAltReachedAcceptState = _closure(input, c, configs,
                 currentAltReachedAcceptState, speculative, treatEofAsEpsilon);
           }
@@ -1645,8 +1633,8 @@ class LexerAtnSimulator extends AtnSimulator {
     }
     // optimization
     if (!config.state.onlyHasEpsilonTransitions) {
-      if (!currentAltReachedAcceptState
-          || !config.hasPassedThroughNonGreedyDecision) {
+      if (!currentAltReachedAcceptState ||
+          !config.hasPassedThroughNonGreedyDecision) {
         configs.add(config);
       }
     }
@@ -1664,19 +1652,20 @@ class LexerAtnSimulator extends AtnSimulator {
   }
 
   // side-effect: can alter configs.hasSemanticContext
-  LexerAtnConfig _getEpsilonTarget(StringSource input,
-                                   LexerAtnConfig config,
-                                   Transition transition,
-                                   AtnConfigSet configs,
-                                   bool speculative,
-                                   bool treatEofAsEpsilon) {
+  LexerAtnConfig _getEpsilonTarget(
+      StringSource input,
+      LexerAtnConfig config,
+      Transition transition,
+      AtnConfigSet configs,
+      bool speculative,
+      bool treatEofAsEpsilon) {
     LexerAtnConfig c = null;
     switch (transition.serializationType) {
       case Transition.RULE:
         var newContext = new SingletonPredictionContext.empty(config.context,
             (transition as RuleTransition).followState.stateNumber);
-        c = new LexerAtnConfig.from(
-            config, transition.target, context:newContext);
+        c = new LexerAtnConfig.from(config, transition.target,
+            context: newContext);
         break;
       case Transition.PRECEDENCE:
         throw new UnsupportedError(
@@ -1710,8 +1699,8 @@ class LexerAtnSimulator extends AtnSimulator {
         if (config.context == null || config.context.hasEmptyPath) {
           var executor = LexerActionExecutor.append(config.lexerActionExecutor,
               atn.lexerActions[(transition as ActionTransition).actionIndex]);
-          c = new LexerAtnConfig.from(
-              config, transition.target, actionExecutor:executor);
+          c = new LexerAtnConfig.from(config, transition.target,
+              actionExecutor: executor);
         } else {
           // ignore actions in referenced rules
           c = new LexerAtnConfig.from(config, transition.target);
@@ -1725,7 +1714,7 @@ class LexerAtnSimulator extends AtnSimulator {
       case Transition.SET:
         if (treatEofAsEpsilon) {
           if (transition.matches(
-            Token.EOF, '\u0000'.codeUnitAt(0), '\uFFFF'.codeUnitAt(0))) {
+              Token.EOF, '\u0000'.codeUnitAt(0), '\uFFFF'.codeUnitAt(0))) {
             c = new LexerAtnConfig.from(config, transition.target);
             break;
           }
@@ -1753,13 +1742,12 @@ class LexerAtnSimulator extends AtnSimulator {
   // one character before the predicate's location.
   //
   // Return true if the specified predicate evaluates to true.
-  bool _evaluatePredicate(StringSource input,
-                          int ruleIndex,
-                          int predIndex,
-                          bool speculative) {
+  bool _evaluatePredicate(
+      StringSource input, int ruleIndex, int predIndex, bool speculative) {
     // assume true if no recognizer was provided
     if (_recog == null) return true;
-    if (!speculative) return _recog.semanticPredicate(null, ruleIndex, predIndex);
+    if (!speculative)
+      return _recog.semanticPredicate(null, ruleIndex, predIndex);
     int savedCharPositionInLine = charPositionInLine;
     int savedLine = line;
     int index = input.index;
@@ -1775,19 +1763,16 @@ class LexerAtnSimulator extends AtnSimulator {
     }
   }
 
-  void _captureSimState(_SimState settings,
-                        StringSource input,
-                        DfaState dfaState) {
+  void _captureSimState(
+      _SimState settings, StringSource input, DfaState dfaState) {
     settings
-        .._index = input.index
-        .._line = line
-        .._charPos = charPositionInLine
-        .._dfaState = dfaState;
+      .._index = input.index
+      .._line = line
+      .._charPos = charPositionInLine
+      .._dfaState = dfaState;
   }
 
-  DfaState _addDfaEdge(DfaState from,
-                       int token,
-                       AtnConfigSet set) {
+  DfaState _addDfaEdge(DfaState from, int token, AtnConfigSet set) {
     // leading to this call, AtnConfigSet.hasSemanticContext is used as a
     // marker indicating dynamic predicate evaluation makes this edge
     // dependent on the specific input sequence, so the static edge in the
@@ -1812,7 +1797,7 @@ class LexerAtnSimulator extends AtnSimulator {
     Dfa dfa = decisionToDfa[_mode];
     if (pState.edges == null) {
       //  make room for tokens 1..n and -1 masquerading as index 0
-      pState.edges = new List<DfaState>(MAX_DFA_EDGE-MIN_DFA_EDGE + 1);
+      pState.edges = new List<DfaState>(MAX_DFA_EDGE - MIN_DFA_EDGE + 1);
     }
     pState.edges[token - MIN_DFA_EDGE] = qState; // connect
   }
@@ -1827,19 +1812,19 @@ class LexerAtnSimulator extends AtnSimulator {
     assert(!configs.hasSemanticContext);
     DfaState proposed = new DfaState.config(configs);
     AtnConfig firstConfigWithRuleStopState = null;
-    for (AtnConfig c in configs) {
-      if (c.state is RuleStopState ) {
+    for (AtnConfig c in configs.elements) {
+      if (c.state is RuleStopState) {
         firstConfigWithRuleStopState = c;
         break;
       }
     }
     if (firstConfigWithRuleStopState != null) {
       proposed
-          ..isAcceptState = true
-          ..lexerActionExecutor = (
-             firstConfigWithRuleStopState as LexerAtnConfig).lexerActionExecutor
-          ..prediction = atn.ruleToTokenType[
-             firstConfigWithRuleStopState.state.ruleIndex];
+        ..isAcceptState = true
+        ..lexerActionExecutor =
+            (firstConfigWithRuleStopState as LexerAtnConfig).lexerActionExecutor
+        ..prediction =
+            atn.ruleToTokenType[firstConfigWithRuleStopState.state.ruleIndex];
     }
     Dfa dfa = decisionToDfa[_mode];
     DfaState existing = dfa.states[proposed];
@@ -1851,23 +1836,23 @@ class LexerAtnSimulator extends AtnSimulator {
     dfa.states[newState] = newState;
     return newState;
   }
-  }
+}
 
-  // When we hit an accept state in either the DFA or the ATN, we
-  // have to notify the character source to start buffering characters
-  // via IntSource.mark and record the current state. The current sim state
-  // includes the current index into the input, the current line,
-  // and current character position in that line. Note that the Lexer is
-  // tracking the starting line and characterization of the token. These
-  // variables track the "state" of the simulator when it hits an accept state.
-  //
-  // We track these variables separately for the DFA and ATN simulation
-  // because the DFA simulation often has to fail over to the ATN
-  // simulation. If the ATN simulation fails, we need the DFA to fall
-  // back to its previously accepted state, if any. If the ATN succeeds,
-  // then the ATN does the accept and the DFA simulator that invoked it
-  // can simply return the predicted token type.
-  class _SimState {
+// When we hit an accept state in either the DFA or the ATN, we
+// have to notify the character source to start buffering characters
+// via IntSource.mark and record the current state. The current sim state
+// includes the current index into the input, the current line,
+// and current character position in that line. Note that the Lexer is
+// tracking the starting line and characterization of the token. These
+// variables track the "state" of the simulator when it hits an accept state.
+//
+// We track these variables separately for the DFA and ATN simulation
+// because the DFA simulation often has to fail over to the ATN
+// simulation. If the ATN simulation fails, we need the DFA to fall
+// back to its previously accepted state, if any. If the ATN succeeds,
+// then the ATN does the accept and the DFA simulator that invoked it
+// can simply return the predicted token type.
+class _SimState {
   int _index = -1;
   int _line = 0;
   int _charPos = -1;
@@ -1880,4 +1865,3 @@ class LexerAtnSimulator extends AtnSimulator {
     _dfaState = null;
   }
 }
-
